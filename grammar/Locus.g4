@@ -6,14 +6,15 @@ program
     ;
 
 statement
-    : variableDeclaration
-    | functionDeclaration
+    : functionDeclaration
     | structDeclaration
     | enumDeclaration
-    | expressionStatement
     | ifStatement
     | whileStatement
+    | matchStatement
     | returnStatement
+    | variableDeclaration
+    | expressionStatement
     ;
 
 variableDeclaration
@@ -100,6 +101,45 @@ whileStatement
     : WHILE expression block
     ;
 
+matchStatement
+    : MATCH expression '{' matchArm* '}'
+    ;
+
+matchArm
+    : pattern ARROW block ','?
+    ;
+
+pattern
+    : literalPattern
+    | identifierPattern
+    | enumVariantPattern
+    | wildcardPattern
+    ;
+
+literalPattern
+    : INTEGER
+    | FLOAT
+    | STRING
+    | TRUE
+    | FALSE
+    ;
+
+identifierPattern
+    : IDENTIFIER
+    ;
+
+enumVariantPattern
+    : IDENTIFIER DOUBLE_COLON IDENTIFIER ('(' patternList ')')?
+    ;
+
+wildcardPattern
+    : UNDERSCORE
+    ;
+
+patternList
+    : pattern (',' pattern)*
+    ;
+
 returnStatement
     : RETURN expression? ';'
     ;
@@ -161,6 +201,7 @@ FN : 'fn';
 IF : 'if';
 ELSE : 'else';
 WHILE : 'while';
+MATCH : 'match';
 RETURN : 'return';
 LOCAL : 'local';
 GLOBAL : 'global';
@@ -173,6 +214,8 @@ FALSE : 'false';
 // Symbols
 COLON : ':';
 DOUBLE_COLON : '::';
+UNDERSCORE : '_';
+ARROW : '=>';
 
 IDENTIFIER
     : [a-zA-Z_][a-zA-Z0-9_]*

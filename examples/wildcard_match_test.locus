@@ -1,0 +1,22 @@
+fn test_number(x: i32) -> i32 {
+    match x {
+        1 => {
+            return 100;
+        },
+        2 => {
+            return 200;
+        },
+        _ => {
+            return 999;
+        }
+    }
+}
+
+fn main() -> i32 {
+    i32 result1 = test_number(1);   // Should return 100
+    i32 result2 = test_number(2);   // Should return 200
+    i32 result3 = test_number(42);  // Should return 999 (wildcard)
+    
+    // Return sum: 100 + 200 + 999 = 1299
+    return result1 + result2 + result3;
+}

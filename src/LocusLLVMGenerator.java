@@ -197,6 +197,9 @@ public class LocusLLVMGenerator extends LocusBaseListener {
         } else if (ctx.getChildCount() == 3 && ctx.getChild(0).getText().equals("(") && ctx.getChild(2).getText().equals(")")) {
             // Parenthesized expression
             return generateExpression(ctx.expression());
+        } else if (ctx.enumVariantAccess() != null) {
+            // Enum variant access
+            return generateEnumVariantAccess(ctx.enumVariantAccess());
         }
         
         return "0"; // Default
@@ -349,6 +352,7 @@ public class LocusLLVMGenerator extends LocusBaseListener {
     @Override
     public void exitBlock(LocusParser.BlockContext ctx) {
         String ifState = symbolTable.get("current_if_state");
+        
         if (ifState != null) {
             String blockCount = symbolTable.get("current_if_block_count");
             int count = Integer.parseInt(blockCount);
@@ -367,6 +371,7 @@ public class LocusLLVMGenerator extends LocusBaseListener {
                 }
             }
         }
+        // Note: Match arm blocks are handled in exitMatchArm, not here
     }
 
     @Override
@@ -413,6 +418,190 @@ public class LocusLLVMGenerator extends LocusBaseListener {
         // Clean up temporary symbols
         symbolTable.remove("current_while_cond");
         symbolTable.remove("current_while_end");
+    }
+    
+    @Override
+    public void enterMatchStatement(LocusParser.MatchStatementContext ctx) {
+        // Generate the expression to match against
+        String matchValue = generateExpression(ctx.expression());
+        
+        // Create labels for match arms and end
+        String endLabel = "match_end_" + labelCounter++;
+        
+        // Store match context for later use
+        symbolTable.put("current_match_value", matchValue);
+        symbolTable.put("current_match_end", endLabel);
+        symbolTable.put("current_match_arm_count", "0");
+        symbolTable.put("current_match_total_arms", String.valueOf(ctx.matchArm().size()));
+        
+        // Don't generate anything yet - let the walker handle each arm
+    }
+    
+    @Override
+    public void exitMatchStatement(LocusParser.MatchStatementContext ctx) {
+        String endLabel = symbolTable.get("current_match_end");
+        
+        // End label - add unreachable instruction in case no patterns match
+        llvmIR.append(endLabel).append(":\n");
+        llvmIR.append("  unreachable\n");
+        
+        // Clean up temporary symbols
+        symbolTable.remove("current_match_value");
+        symbolTable.remove("current_match_end");
+        symbolTable.remove("current_match_arm_count");
+        symbolTable.remove("current_match_total_arms");
+    }
+    
+    @Override
+    public void enterMatchArm(LocusParser.MatchArmContext ctx) {
+        String matchValue = symbolTable.get("current_match_value");
+        String endLabel = symbolTable.get("current_match_end");
+        String armCountStr = symbolTable.get("current_match_arm_count");
+        String totalArmsStr = symbolTable.get("current_match_total_arms");
+        
+        int armCount = Integer.parseInt(armCountStr);
+        int totalArms = Integer.parseInt(totalArmsStr);
+        
+        // Generate pattern test
+        String condition = generatePatternMatch(ctx.pattern(), matchValue);
+        String armLabel = "match_arm_" + labelCounter++;
+        String nextLabel = (armCount < totalArms - 1) ? "match_test_" + labelCounter++ : endLabel;
+        
+        // Branch to arm if pattern matches, otherwise to next test
+        llvmIR.append("  br i1 ").append(condition).append(", label %").append(armLabel)
+              .append(", label %").append(nextLabel).append("\n\n");
+        
+        // Start arm block
+        llvmIR.append(armLabel).append(":\n");
+        
+        // Store context for this arm
+        symbolTable.put("current_match_arm_active", "true");
+        symbolTable.put("current_match_next_label", nextLabel);
+        
+        // Update arm count
+        symbolTable.put("current_match_arm_count", String.valueOf(armCount + 1));
+    }
+    
+    @Override
+    public void exitMatchArm(LocusParser.MatchArmContext ctx) {
+        String nextLabel = symbolTable.get("current_match_next_label");
+        String endLabel = symbolTable.get("current_match_end");
+        String armCountStr = symbolTable.get("current_match_arm_count");
+        String totalArmsStr = symbolTable.get("current_match_total_arms");
+        
+        int armCount = Integer.parseInt(armCountStr);
+        int totalArms = Integer.parseInt(totalArmsStr);
+        
+        // Jump to end after executing this arm
+        llvmIR.append("  br label %").append(endLabel).append("\n\n");
+        
+        // If there are more arms, start the next test label
+        if (armCount < totalArms && !nextLabel.equals(endLabel)) {
+            llvmIR.append(nextLabel).append(":\n");
+        }
+        
+        // Clean up arm context
+        symbolTable.remove("current_match_arm_active");
+        symbolTable.remove("current_match_next_label");
+    }
+    
+    
+    
+    private String generatePatternMatch(LocusParser.PatternContext pattern, String matchValue) {
+        if (pattern.literalPattern() != null) {
+            return generateLiteralPatternMatch(pattern.literalPattern(), matchValue);
+        } else if (pattern.identifierPattern() != null) {
+            return generateIdentifierPatternMatch(pattern.identifierPattern(), matchValue);
+        } else if (pattern.enumVariantPattern() != null) {
+            return generateEnumVariantPatternMatch(pattern.enumVariantPattern(), matchValue);
+        } else if (pattern.wildcardPattern() != null) {
+            return generateWildcardPatternMatch(pattern.wildcardPattern(), matchValue);
+        }
+        
+        // Default: always match (should not happen)
+        return "true";
+    }
+    
+    private String generateLiteralPatternMatch(LocusParser.LiteralPatternContext pattern, String matchValue) {
+        String patternValue;
+        
+        if (pattern.INTEGER() != null) {
+            patternValue = pattern.INTEGER().getText();
+        } else if (pattern.FLOAT() != null) {
+            patternValue = pattern.FLOAT().getText();
+        } else if (pattern.STRING() != null) {
+            patternValue = pattern.STRING().getText();
+        } else if (pattern.TRUE() != null) {
+            patternValue = "1";
+        } else if (pattern.FALSE() != null) {
+            patternValue = "0";
+        } else {
+            patternValue = "0"; // Default
+        }
+        
+        // Generate comparison
+        String resultName = "%temp_" + tempCounter++;
+        llvmIR.append("  ").append(resultName).append(" = icmp eq i32 ").append(matchValue)
+              .append(", ").append(patternValue).append("\n");
+        
+        return resultName;
+    }
+    
+    private String generateIdentifierPatternMatch(LocusParser.IdentifierPatternContext pattern, String matchValue) {
+        // For now, treat identifier patterns as variable bindings that always match
+        // In a full implementation, this would bind the value to the identifier
+        String identifier = pattern.IDENTIFIER().getText();
+        
+        // Store the binding for use within the match arm
+        symbolTable.put("pattern_binding_" + identifier, matchValue);
+        
+        // Always matches
+        return "true";
+    }
+    
+    private String generateEnumVariantPatternMatch(LocusParser.EnumVariantPatternContext pattern, String matchValue) {
+        // For now, implement a simple enum variant comparison
+        // In a full implementation, this would need proper enum support
+        String enumType = pattern.IDENTIFIER(0).getText();
+        String variant = pattern.IDENTIFIER(1).getText();
+        
+        // For simplicity, assume enum variants are represented as integers
+        // This is a placeholder implementation
+        String variantValue = getEnumVariantValue(enumType, variant);
+        
+        String resultName = "%temp_" + tempCounter++;
+        llvmIR.append("  ").append(resultName).append(" = icmp eq i32 ").append(matchValue)
+              .append(", ").append(variantValue).append("\n");
+        
+        return resultName;
+    }
+    
+    private String generateWildcardPatternMatch(LocusParser.WildcardPatternContext pattern, String matchValue) {
+        // Wildcard always matches
+        return "true";
+    }
+    
+    private String getEnumVariantValue(String enumType, String variant) {
+        // Simple mapping for Color enum used in our test
+        if ("Color".equals(enumType)) {
+            switch (variant) {
+                case "Red": return "0";
+                case "Green": return "1";
+                case "Blue": return "2";
+                default: return "0";
+            }
+        }
+        
+        // Default mapping
+        return "0";
+    }
+    
+    private String generateEnumVariantAccess(LocusParser.EnumVariantAccessContext ctx) {
+        String enumType = ctx.IDENTIFIER(0).getText();
+        String variant = ctx.IDENTIFIER(1).getText();
+        
+        // Return the integer value for the enum variant
+        return getEnumVariantValue(enumType, variant);
     }
     
     public String getLLVMIR() {

@@ -1,0 +1,28 @@
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+fn test_color(color: Color) -> i32 {
+    match color {
+        Color::Red => {
+            return 10;
+        },
+        Color::Green => {
+            return 20;
+        },
+        Color::Blue => {
+            return 30;
+        }
+    }
+}
+
+fn main() -> i32 {
+    i32 red_result = test_color(Color::Red);
+    i32 green_result = test_color(Color::Green);
+    i32 blue_result = test_color(Color::Blue);
+    
+    // Return sum: 10 + 20 + 30 = 60
+    return red_result + green_result + blue_result;
+}

@@ -1,0 +1,24 @@
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+fn main() -> i32 {
+    Color color = Color::Red;
+    i32 result = 0;
+    
+    match color {
+        Color::Red => {
+            result = 1;
+        },
+        Color::Green => {
+            result = 2;
+        },
+        Color::Blue => {
+            result = 3;
+        }
+    }
+    
+    return result;
+}
