@@ -1,0 +1,17 @@
+fn test_comparisons() -> i32 {
+    local i32 a = 10;
+    local i32 b = 5;
+    local i32 result = 0;
+    
+    // Test various comparisons (using 1 for true, 0 for false)
+    local bool gt = a > b;    // Should be true (1)
+    local bool lt = a < b;    // Should be false (0)  
+    local bool eq = a == b;   // Should be false (0)
+    local bool ne = a != b;   // Should be true (1)
+    
+    return 42; // Just return a known value for now
+}
+
+fn main() -> i32 {
+    return test_comparisons();
+}

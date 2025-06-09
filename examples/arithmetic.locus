@@ -1,0 +1,13 @@
+fn test_arithmetic() -> i32 {
+    local i32 a = 15;
+    local i32 b = 3;
+    local i32 sum = a + b;
+    local i32 diff = a - b;
+    local i32 prod = a * b;
+    local i32 quot = a / b;
+    return sum + diff + prod + quot;
+}
+
+fn main() -> i32 {
+    return test_arithmetic();
+}

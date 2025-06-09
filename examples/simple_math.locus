@@ -1,0 +1,11 @@
+fn add_numbers(i32 a, i32 b) -> i32 {
+    local i32 result = a + b;
+    return result;
+}
+
+fn main() -> i32 {
+    local i32 x = 10;
+    local i32 y = 20;
+    local i32 sum = add_numbers(x, y);
+    return sum;
+}
