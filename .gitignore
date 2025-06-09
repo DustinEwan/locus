@@ -20,6 +20,22 @@ Thumbs.db
 # Generated LLVM IR files
 *.ll
 
+# Generated assembly files
+*.s
+
+# Generated executables (in examples directory)
+examples/arithmetic
+examples/comparisons
+examples/comprehensive_match_test
+examples/simple_match_debug
+examples/simple_match_test
+examples/wildcard_match_test
+examples/if_test
+examples/if_else_test
+examples/while_test
+examples/nested_control_test
+examples/simple_math
+
 # Temporary files
 *.tmp
 *.temp
