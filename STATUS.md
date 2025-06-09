@@ -20,6 +20,12 @@
   - Expression parsing with operator precedence
   - Function calls and parameter passing
   - Comments and whitespace handling
+  - **Struct declarations with field mode annotations**
+  - **Enum declarations with parameterized variants**
+  - **Generic structs and enums (Container<T>, Option<T>)**
+  - **Struct initialization syntax (Point { x: 10, y: 20 })**
+  - **Enum variant access with :: operator (Color::Red)**
+  - **Explicit keyword tokens for proper recognition**
 
 ### Compiler Infrastructure
 - [x] Created `LocusCompiler.java` - main compiler driver
@@ -29,9 +35,11 @@
 
 ### Testing & Validation
 - [x] Created example programs (`hello.locus`, `complex.locus`)
+- [x] **Added struct/enum test programs (`simple_struct_enum.locus`, `structs_enums.locus`)**
 - [x] Verified tokenization works correctly
 - [x] Verified parse tree generation works correctly
 - [x] Tested semantic analyzer with complex programs
+- [x] **Verified struct and enum parsing with no errors**
 - [x] Created comprehensive test suite (`test.sh`)
 
 ### Documentation
@@ -88,10 +96,10 @@ java -cp ".:tools/antlr-4.13.1-complete.jar:build/classes" LocusCompiler example
 
 ## 📊 METRICS
 
-- **Grammar Rules**: 25+ parser rules, 10+ lexer rules
-- **Language Features**: Functions, variables, types, control flow, mode annotations
-- **Example Programs**: 2 working examples demonstrating core features
-- **Test Coverage**: Basic functionality fully tested
+- **Grammar Rules**: 30+ parser rules, 15+ lexer rules
+- **Language Features**: Functions, variables, types, control flow, mode annotations, **structs, enums**
+- **Example Programs**: 4 working examples demonstrating core features **including structs/enums**
+- **Test Coverage**: Basic functionality and **struct/enum features** fully tested
 - **Documentation**: Comprehensive setup and usage documentation
 
 ## 🎉 SUCCESS CRITERIA MET
