@@ -1,0 +1,10 @@
+// Simple Hello World program in Locus
+fn main() -> i32 {
+    local String message = "Hello, Locus!";
+    print(message);
+    return 0;
+}
+
+fn print(shared String text) {
+    // Built-in print function (to be implemented)
+}

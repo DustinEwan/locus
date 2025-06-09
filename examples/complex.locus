@@ -1,0 +1,27 @@
+// More complex Locus program demonstrating various features
+
+fn fibonacci(i32 n) -> i32 {
+    if n <= 1 {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fn main() -> i32 {
+    local i32 count = 10;
+    unique String result = "Fibonacci sequence: ";
+    
+    local i32 i = 0;
+    while i < count {
+        local i32 fib = fibonacci(i);
+        result = result + fib + " ";
+        i = i + 1;
+    }
+    
+    print(result);
+    return 0;
+}
+
+fn print(shared String text) {
+    // Print implementation
+}
