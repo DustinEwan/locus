@@ -1,6 +1,6 @@
 # The Locus Programming Language
 
-**Status:** `[ Pre-Alpha / Design Phase ]`
+**Status:** `[ Alpha / Functional Compiler ]`
 
 **Vision:** A systems programming language that combines the expressive power of Rust's type system with a novel, intuitive memory safety model based on locality.
 
@@ -10,11 +10,12 @@
 
 Locus is a new programming language born from a simple question: Can we have the compile-time memory safety and performance of Rust without the cognitive overhead of its lifetime system?
 
-We believe the answer is yes. Locus aims to provide:
+We believe the answer is yes. Locus provides:
 
-* **A Rich Type System:** The full power of Rust's `structs` and `enums` along with exhaustive `match` expressions for creating robust, domain-specific types.
+* **A Rich Type System:** Full support for `structs` and `enums` with exhaustive `match` expressions for creating robust, domain-specific types.
 * **Compile-Time Memory Safety:** Guarantees against dangling pointers, data races, and other common memory errors, enforced by the compiler before your code ever runs.
 * **No Lifetimes:** The explicit lifetime annotations (`'a`) found in Rust are completely removed.
+* **LLVM Backend:** Compiles to native machine code via LLVM IR for optimal performance.
 
 Instead of lifetimes, Locus's safety model is built on **Locality and Uniqueness Modes**, an idea inspired by the research and extensions developed at Jane Street. This shifts the core question of memory safety from:
 
@@ -33,65 +34,107 @@ The Locus compiler understands a set of "modes" that are orthogonal to a value's
     * `shared`: Multiple, read-only borrows (like `&T`).
     * `exclusive`: A single, mutable borrow (like `&mut T`).
 
+## Current Features
+
+Locus currently supports a comprehensive set of language features:
+
+### ✅ Implemented Features
+- **Complete Grammar**: ANTLR-based parser with full language support
+- **Data Types**: Primitives (`i32`, `i64`, `f32`, `f64`, `bool`, `String`) and complex types
+- **Structs & Enums**: Full support with generics and mode annotations
+- **Functions**: Declaration, parameters, return types, and calls
+- **Control Flow**: `if`/`else` statements, `while` loops, and nested control structures
+- **Pattern Matching**: Comprehensive `match` expressions with literal, enum variant, and wildcard patterns
+- **LLVM Backend**: Complete LLVM IR generation and native code compilation
+- **Memory Safety**: Mode system implementation (locality and uniqueness modes)
+
+### 🔧 Example Programs
+```locus
+// Enum with pattern matching
+enum Color { Red, Green, Blue }
+
+fn test_color(color: Color) -> i32 {
+    match color {
+        Color::Red => { return 10; },
+        Color::Green => { return 20; },
+        Color::Blue => { return 30; }
+    }
+}
+
+fn main() -> i32 {
+    i32 result = test_color(Color::Red);
+    return result; // Returns 10
+}
+```
+
 ## Development Roadmap
 
-Our development plan follows a pragmatic two-phase strategy:
+### Phase 1: Bootstrap with ANTLR ✅ COMPLETE
+- ✅ **Parser Generation**: ANTLR v4 parser from formal grammar (`Locus.g4`)
+- ✅ **Core Tooling**: Java-based compiler driver with LLVM backend
+- ✅ **LLVM Integration**: Full LLVM IR generation and native compilation
+- ✅ **Language Features**: Complete type system, control flow, and pattern matching
 
-#### Phase 1: Bootstrap with ANTLR
-The initial goal is to get a working compiler and interpreter running as quickly as possible to validate the core concepts of the language.
+### Phase 2: Advanced Features (Current Focus)
+- 🔄 **Enhanced Type System**: Advanced generics and trait-like features
+- 🔄 **Memory Management**: Full locality/uniqueness mode enforcement
+- 🔄 **Standard Library**: Core data structures and I/O operations
+- 🔄 **Error Handling**: Comprehensive error types and propagation
 
-1.  **Parser Generation:** We will use **ANTLR v4** to generate a robust parser from a formal grammar file (`Locus.g4`). This allows us to focus on semantics rather than parsing logic.
-2.  **Core Tooling:** The compiler driver will be written in a mature language (e.g., Java, Rust, or Python).
-3.  **Focus:** The primary effort will be on building the **semantic analyzer and type checker**, which is where the novel locality/uniqueness logic resides.
-4.  **Outcome:** A functional interpreter that can execute Locus code, proving that the memory model is sound and usable.
+### Phase 3: Self-Hosting (Future)
+- 🔮 **Language Refinement**: Features for systems development
+- 🔮 **Parser Rewrite**: Hand-written recursive descent parser
+- 🔮 **Self-Hosted Compiler**: Locus compiler written in Locus
 
-#### Phase 2: Dogfooding and Self-Hosting
-Once Locus is powerful enough, we will begin the "dogfooding" process: rewriting the Locus compiler in Locus itself.
 
-1.  **Language Refinement:** We will enhance the language with the features necessary for systems development (better I/O, concurrency primitives, etc.).
-2.  **Parser Rewrite:** The ANTLR-based parser will be replaced with a **hand-written recursive descent parser**. This will give us maximum control over performance and, crucially, the quality of compiler error messages.
-3.  **Outcome:** A fully self-hosted Locus compiler, representing a major milestone in the language's maturity.
 
-## Task Checklist & Progress
+## Getting Started
 
-*Last Updated: June 7, 2024*
+### Prerequisites
+- OpenJDK 17 or later
+- LLVM 15.0.6 (with `llc-15` and `clang-15`)
+- ANTLR 4.13.1 (included in `tools/`)
 
-### Milestone 1: Foundational Setup
-- [x] Formalize core design philosophy.
-- [x] Choose a name and establish the development roadmap.
-- [x] Create initial project `README.md`.
-- [ ] Initialize Git repository and project structure.
+### Building and Running
+```bash
+# Compile a Locus program
+java -cp ".:tools/antlr-4.13.1-complete.jar:build/classes" LocusCompiler examples/simple_match_test.locus
 
-### Milestone 2: Parsing (ANTLR Bootstrap)
-- [ ] Draft initial `Locus.g4` grammar for ANTLR.
-- [ ] Refine grammar to handle operator precedence and more complex expressions.
-- [ ] Set up the compiler driver application.
-- [ ] Implement the logic to consume the ANTLR parse tree and build our own internal AST.
+# Generate assembly and executable
+llc-15 examples/simple_match_test.ll -o examples/simple_match_test.s
+clang-15 examples/simple_match_test.s -o examples/simple_match_test
 
-### Milestone 3: Semantic Analysis & Type Checking
-- [ ] Design the internal Abstract Syntax Tree (AST) data structures.
-- [ ] Implement symbol table management for tracking variables, types, and functions.
-- [ ] **Implement the Type and Mode Checker:**
-    - [ ] Basic type resolution (e.g., `String`, `i32`).
-    - [ ] Generic type resolution (`List<T>`).
-    - [ ] **Locality Analysis:** Enforce `local` vs. `global` scoping rules.
-    - [ ] **Uniqueness Analysis:** Enforce `unique`, `shared`, and `exclusive` borrowing rules.
-- [ ] Implement `struct` and `impl` resolution.
+# Run the program
+./examples/simple_match_test
+echo "Exit code: $?"
+```
 
-### Milestone 4: Interpretation
-- [ ] Design the structure for runtime values (e.g., `Value::Integer(i64)`, `Value::String(String)`).
-- [ ] Implement an AST-walking interpreter.
-- [ ] Implement runtime memory management for `global unique` pointers.
-- [ ] Handle control flow (`if`/`else`) and function calls within the interpreter.
-- [ ] Implement the standard library functions defined in the prelude.
+### Example Programs
+The `examples/` directory contains various Locus programs demonstrating language features:
+- `simple_match_test.locus` - Basic pattern matching
+- `comprehensive_match_test.locus` - Advanced pattern matching with functions
+- `if_test.locus`, `while_test.locus` - Control flow examples
+- `structs_enums.locus` - Data type definitions
 
-### Milestone 5: The Future (Self-Hosting)
-- [ ] Enhance the language with features required for compiler development (e.g., File I/O).
-- [ ] Begin writing the new Locus compiler in Locus.
+## Documentation
+
+Detailed documentation is available in the `docs/` directory:
+
+- **[Pattern Matching Status](docs/PATTERN_MATCHING_STATUS.md)** - Complete pattern matching implementation details
+- **[Control Flow Status](docs/CONTROL_FLOW_STATUS.md)** - If/else and while loop implementation
+- **[LLVM Status](docs/LLVM_STATUS.md)** - LLVM IR generation and compilation details
+- **[Struct/Enum Summary](docs/STRUCT_ENUM_SUMMARY.md)** - Type system implementation
+- **[ANTLR Setup](docs/ANTLR_SETUP.md)** - Parser and grammar development
+- **[Documentation Index](docs/README.md)** - Complete documentation overview
 
 ## How to Contribute
 
-This project is in its infancy. For now, the focus is on implementing the core compiler functionality as outlined in the roadmap. As the project matures, guidelines for contribution will be established here.
+Locus is actively developed and welcomes contributions! The compiler is functional with core features implemented. Current focus areas include:
+
+- Advanced type system features
+- Memory safety enforcement
+- Standard library development
+- Performance optimizations
 
 ## License
 
