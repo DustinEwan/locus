@@ -1,0 +1,31 @@
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+fn get_color_value(color: Color) -> i32 {
+    match color {
+        Color::Red => 10,
+        Color::Green => 20,
+        Color::Blue => 30
+    }
+}
+
+fn get_doubled_value(x: i32) -> i32 {
+    x * 2  // Implicit return - no semicolon
+}
+
+fn main() -> i32 {
+    let red_value = get_color_value(Color::Red);
+    let doubled = get_doubled_value(red_value);
+    
+    // Test match expression in variable assignment
+    let result = match Color::Blue {
+        Color::Red => 1,
+        Color::Green => 2,
+        Color::Blue => 3
+    };
+    
+    return result;
+}

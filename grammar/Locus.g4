@@ -90,7 +90,7 @@ typeList
     ;
 
 block
-    : '{' statement* '}'
+    : '{' statement* expression? '}'  // Optional trailing expression for implicit return
     ;
 
 ifStatement
@@ -150,6 +150,7 @@ expressionStatement
 
 expression
     : primary
+    | matchExpression                              // Match expression
     | expression '.' IDENTIFIER                    // Field access
     | expression '(' argumentList? ')'             // Function call
     | expression '[' expression ']'               // Array/index access
@@ -159,6 +160,14 @@ expression
     | expression ('<' | '<=' | '>' | '>=' | '==' | '!=') expression  // Relational
     | expression ('&&' | '||') expression         // Logical
     | expression '=' expression                   // Assignment
+    ;
+
+matchExpression
+    : MATCH expression '{' matchExpressionArm* '}'
+    ;
+
+matchExpressionArm
+    : pattern ARROW expression ','?
     ;
 
 argumentList

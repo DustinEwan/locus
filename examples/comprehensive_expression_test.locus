@@ -1,0 +1,56 @@
+enum Status {
+    Success,
+    Warning,
+    Error
+}
+
+fn get_status_code(status: Status) -> i32 {
+    match status {
+        Status::Success => 0,
+        Status::Warning => 1,
+        Status::Error => 2
+    }
+}
+
+fn calculate_score(base: i32, multiplier: i32) -> i32 {
+    base * multiplier + 10  // Implicit return with complex expression
+}
+
+fn get_message_length(status: Status) -> i32 {
+    // Nested match expression in implicit return
+    match status {
+        Status::Success => match 1 {
+            0 => 5,
+            1 => 7
+        },
+        Status::Warning => 8,
+        Status::Error => 5
+    }
+}
+
+fn main() -> i32 {
+    // Test 1: Match expression in variable assignment
+    let code = match Status::Warning {
+        Status::Success => 100,
+        Status::Warning => 200,
+        Status::Error => 300
+    };
+    
+    // Test 2: Function with implicit return
+    let score = calculate_score(5, 3);
+    
+    // Test 3: Nested match expressions
+    let length = get_message_length(Status::Success);
+    
+    // Test 4: Match expression as function argument
+    let final_result = calculate_score(
+        match Status::Error {
+            Status::Success => 1,
+            Status::Warning => 2,
+            Status::Error => 3
+        },
+        4
+    );
+    
+    return final_result;
+}

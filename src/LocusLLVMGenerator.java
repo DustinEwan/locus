@@ -125,6 +125,8 @@ public class LocusLLVMGenerator extends LocusBaseListener {
     private String generateExpression(LocusParser.ExpressionContext ctx) {
         if (ctx.primary() != null) {
             return generatePrimary(ctx.primary());
+        } else if (ctx.matchExpression() != null) {
+            return generateMatchExpression(ctx.matchExpression());
         } else if (ctx.getChildCount() == 3 && ctx.expression().size() == 2) {
             String op = ctx.getChild(1).getText();
             
@@ -351,6 +353,20 @@ public class LocusLLVMGenerator extends LocusBaseListener {
     
     @Override
     public void exitBlock(LocusParser.BlockContext ctx) {
+        // Handle implicit returns from trailing expressions
+        if (ctx.expression() != null) {
+            // This block has a trailing expression for implicit return
+            String value = generateExpression(ctx.expression());
+            
+            // Check if we're in a function context that should return this value
+            if (currentFunction != null && !currentFunction.equals("main")) {
+                String returnType = "i32"; // Default for now
+                llvmIR.append("  ret ").append(returnType).append(" ").append(value).append("\n");
+                return; // Don't process normal block exit logic
+            }
+        }
+        
+        // Normal block exit logic for if/else statements
         String ifState = symbolTable.get("current_if_state");
         
         if (ifState != null) {
@@ -592,6 +608,16 @@ public class LocusLLVMGenerator extends LocusBaseListener {
             }
         }
         
+        // Simple mapping for Status enum
+        if ("Status".equals(enumType)) {
+            switch (variant) {
+                case "Success": return "0";
+                case "Warning": return "1";
+                case "Error": return "2";
+                default: return "0";
+            }
+        }
+        
         // Default mapping
         return "0";
     }
@@ -602,6 +628,62 @@ public class LocusLLVMGenerator extends LocusBaseListener {
         
         // Return the integer value for the enum variant
         return getEnumVariantValue(enumType, variant);
+    }
+    
+    private String generateMatchExpression(LocusParser.MatchExpressionContext ctx) {
+        // Generate the expression to match against
+        String matchValue = generateExpression(ctx.expression());
+        
+        // Create a temporary variable to store the result
+        String resultVar = "%match_result_" + labelCounter++;
+        String resultType = "i32"; // For now, assume i32 result type
+        
+        // Allocate space for the result
+        llvmIR.append("  ").append(resultVar).append(" = alloca ").append(resultType).append("\n");
+        
+        // Create labels for match arms and end
+        String endLabel = "match_expr_end_" + labelCounter++;
+        
+        // Generate each match arm
+        for (int i = 0; i < ctx.matchExpressionArm().size(); i++) {
+            LocusParser.MatchExpressionArmContext arm = ctx.matchExpressionArm().get(i);
+            
+            // Generate pattern test
+            String condition = generatePatternMatch(arm.pattern(), matchValue);
+            String armLabel = "match_expr_arm_" + labelCounter++;
+            String nextLabel = (i < ctx.matchExpressionArm().size() - 1) ? 
+                "match_expr_test_" + labelCounter++ : endLabel;
+            
+            // Branch to arm if pattern matches, otherwise to next test
+            llvmIR.append("  br i1 ").append(condition).append(", label %").append(armLabel)
+                  .append(", label %").append(nextLabel).append("\n\n");
+            
+            // Start arm block
+            llvmIR.append(armLabel).append(":\n");
+            
+            // Generate the expression for this arm and store it
+            String armValue = generateExpression(arm.expression());
+            llvmIR.append("  store ").append(resultType).append(" ").append(armValue)
+                  .append(", ").append(resultType).append("* ").append(resultVar).append("\n");
+            
+            // Jump to end
+            llvmIR.append("  br label %").append(endLabel).append("\n\n");
+            
+            // If there are more arms, start the next test label
+            if (i < ctx.matchExpressionArm().size() - 1) {
+                llvmIR.append(nextLabel).append(":\n");
+            }
+        }
+        
+        // End label
+        llvmIR.append(endLabel).append(":\n");
+        
+        // Load and return the result
+        String loadedResult = "%match_loaded_" + labelCounter++;
+        llvmIR.append("  ").append(loadedResult).append(" = load ").append(resultType)
+              .append(", ").append(resultType).append("* ").append(resultVar).append("\n");
+        
+        return loadedResult;
     }
     
     public String getLLVMIR() {

@@ -45,25 +45,40 @@ Locus currently supports a comprehensive set of language features:
 - **Functions**: Declaration, parameters, return types, and calls
 - **Control Flow**: `if`/`else` statements, `while` loops, and nested control structures
 - **Pattern Matching**: Comprehensive `match` expressions with literal, enum variant, and wildcard patterns
+- **Expression-Oriented Programming**: Match expressions return values, implicit returns from functions
 - **LLVM Backend**: Complete LLVM IR generation and native code compilation
 - **Memory Safety**: Mode system implementation (locality and uniqueness modes)
 
 ### 🔧 Example Programs
 ```locus
-// Enum with pattern matching
+// Expression-oriented programming with match expressions
 enum Color { Red, Green, Blue }
 
-fn test_color(color: Color) -> i32 {
+fn get_color_value(color: Color) -> i32 {
+    // Match expression returns value directly
     match color {
-        Color::Red => { return 10; },
-        Color::Green => { return 20; },
-        Color::Blue => { return 30; }
+        Color::Red => 10,
+        Color::Green => 20,
+        Color::Blue => 30
     }
 }
 
+fn double_value(x: i32) -> i32 {
+    x * 2  // Implicit return - no semicolon needed
+}
+
 fn main() -> i32 {
-    i32 result = test_color(Color::Red);
-    return result; // Returns 10
+    // Match expressions can be used in variable assignments
+    let result = match Color::Blue {
+        Color::Red => 1,
+        Color::Green => 2,
+        Color::Blue => 3
+    };
+    
+    // Functions with implicit returns
+    let doubled = double_value(result);
+    
+    return doubled; // Returns 6
 }
 ```
 
@@ -97,20 +112,28 @@ fn main() -> i32 {
 
 ### Building and Running
 ```bash
+# Build the compiler
+./build.sh
+
 # Compile a Locus program
-java -cp ".:tools/antlr-4.13.1-complete.jar:build/classes" LocusCompiler examples/simple_match_test.locus
+java -cp ".:tools/antlr-4.13.1-complete.jar:build/classes" LocusCompiler examples/test_expression_oriented.locus
 
 # Generate assembly and executable
-llc-15 examples/simple_match_test.ll -o examples/simple_match_test.s
-clang-15 examples/simple_match_test.s -o examples/simple_match_test
+llc examples/test_expression_oriented.ll -o test_expression_oriented.s
+gcc test_expression_oriented.s -o test_expression_oriented
 
 # Run the program
-./examples/simple_match_test
+./test_expression_oriented
 echo "Exit code: $?"
+
+# Clean up generated files
+./clean.sh
 ```
 
 ### Example Programs
 The `examples/` directory contains various Locus programs demonstrating language features:
+- `test_expression_oriented.locus` - Expression-oriented programming with match expressions and implicit returns
+- `comprehensive_expression_test.locus` - Advanced expression-oriented features with nested match expressions
 - `simple_match_test.locus` - Basic pattern matching
 - `comprehensive_match_test.locus` - Advanced pattern matching with functions
 - `if_test.locus`, `while_test.locus` - Control flow examples
