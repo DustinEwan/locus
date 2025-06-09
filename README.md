@@ -63,7 +63,7 @@ Once Locus is powerful enough, we will begin the "dogfooding" process: rewriting
 - [ ] Initialize Git repository and project structure.
 
 ### Milestone 2: Parsing (ANTLR Bootstrap)
-- [x] Draft initial `Locus.g4` grammar for ANTLR.
+- [ ] Draft initial `Locus.g4` grammar for ANTLR.
 - [ ] Refine grammar to handle operator precedence and more complex expressions.
 - [ ] Set up the compiler driver application.
 - [ ] Implement the logic to consume the ANTLR parse tree and build our own internal AST.
