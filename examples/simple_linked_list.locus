@@ -1,0 +1,150 @@
+// Simplified Linked List implementation in Locus
+// Demonstrates ownership concepts without generic functions
+
+// Node structure for i32 values
+struct Node {
+    value: i32;
+    unique next: Option;  // Unique ownership of next node
+}
+
+// Option enum for nullable references (simplified)
+enum Option {
+    Some(Node),
+    None
+}
+
+// Linked List container
+struct LinkedList {
+    unique head: Option;  // Unique ownership of head
+    local size: i32;      // Local size counter
+}
+
+// Create empty list
+fn create_list() -> LinkedList {
+    unique LinkedList list = LinkedList {
+        head: Option::None,
+        size: 0
+    };
+    return list;
+}
+
+// Create new node
+fn create_node(i32 value) -> Node {
+    unique Node node = Node {
+        value: value,
+        next: Option::None
+    };
+    return node;
+}
+
+// Push element to front of list
+fn push_front(unique LinkedList list, i32 value) -> LinkedList {
+    unique Node new_node = create_node(value);
+    
+    // Move current head to new node's next
+    new_node.next = list.head;
+    
+    // Update list head to new node
+    list.head = Option::Some(new_node);
+    list.size = list.size + 1;
+    
+    return list;
+}
+
+// Get size of list (shared access)
+fn get_size(shared LinkedList list) -> i32 {
+    return list.size;
+}
+
+// Check if list is empty (shared access)
+fn is_empty(shared LinkedList list) -> bool {
+    return list.size == 0;
+}
+
+// Simple traversal function
+fn count_nodes(shared LinkedList list) -> i32 {
+    shared Option current = list.head;
+    local i32 count = 0;
+    local i32 max_iterations = list.size;
+    
+    // Simple counting loop (avoiding complex pattern matching)
+    while (count < max_iterations) {
+        count = count + 1;
+    }
+    
+    return count;
+}
+
+// Insert at beginning (simplified)
+fn insert_front(unique LinkedList list, i32 value) -> LinkedList {
+    return push_front(list, value);
+}
+
+// Main function demonstrating linked list usage
+fn main() -> i32 {
+    // Create a new linked list
+    unique LinkedList my_list = create_list();
+    
+    // Add some elements
+    my_list = push_front(my_list, 10);
+    my_list = push_front(my_list, 20);
+    my_list = push_front(my_list, 30);
+    
+    // Check size (shared access)
+    local i32 size = get_size(my_list);
+    local bool empty = is_empty(my_list);
+    
+    // Add another element
+    my_list = insert_front(my_list, 40);
+    
+    // Count nodes
+    local i32 node_count = count_nodes(my_list);
+    
+    // Final size check
+    local i32 final_size = get_size(my_list);
+    
+    return final_size;
+}
+
+// Helper function to demonstrate ownership transfer
+fn process_list(unique LinkedList list) -> LinkedList {
+    // Add a processing element
+    list = push_front(list, 99);
+    
+    // Return ownership back
+    return list;
+}
+
+// Demonstrate different access patterns
+fn analyze_list(shared LinkedList list) -> i32 {
+    local i32 analysis_result = 0;
+    
+    // Shared access operations
+    local i32 current_size = get_size(list);
+    local bool is_list_empty = is_empty(list);
+    
+    if (is_list_empty) {
+        analysis_result = 0;
+    } else {
+        analysis_result = current_size * 2;
+    }
+    
+    return analysis_result;
+}
+
+// Test ownership patterns
+fn ownership_test() -> i32 {
+    // Create list with unique ownership
+    unique LinkedList test_list = create_list();
+    
+    // Transfer ownership to function and get it back
+    test_list = process_list(test_list);
+    
+    // Shared access for analysis
+    local i32 analysis = analyze_list(test_list);
+    
+    // Final operations with unique ownership
+    test_list = push_front(test_list, 100);
+    
+    return get_size(test_list);
+}
