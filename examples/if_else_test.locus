@@ -1,0 +1,12 @@
+fn main() -> i32 {
+    i32 x = 3;
+    i32 result = 0;
+    
+    if (x > 5) {
+        result = 10;
+    } else {
+        result = 20;
+    }
+    
+    return result;
+}

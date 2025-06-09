@@ -1,0 +1,11 @@
+fn main() -> i32 {
+    i32 counter = 0;
+    i32 sum = 0;
+    
+    while (counter < 5) {
+        sum = sum + counter;
+        counter = counter + 1;
+    }
+    
+    return sum;
+}

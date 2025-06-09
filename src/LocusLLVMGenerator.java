@@ -126,12 +126,30 @@ public class LocusLLVMGenerator extends LocusBaseListener {
         if (ctx.primary() != null) {
             return generatePrimary(ctx.primary());
         } else if (ctx.getChildCount() == 3 && ctx.expression().size() == 2) {
-            // Binary operation
-            String left = generateExpression(ctx.expression(0));
-            String right = generateExpression(ctx.expression(1));
             String op = ctx.getChild(1).getText();
             
-            return generateBinaryOp(left, right, op);
+            if (op.equals("=")) {
+                // Assignment operation
+                String varName = ctx.expression(0).getText();
+                String value = generateExpression(ctx.expression(1));
+                
+                // Find variable in symbol table
+                String key = varName + "_" + currentScope;
+                String allocaName = symbolTable.get(key);
+                String varType = typeTable.get(key);
+                
+                if (allocaName != null && varType != null) {
+                    llvmIR.append("  store ").append(varType).append(" ").append(value)
+                          .append(", ").append(varType).append("* ").append(allocaName).append("\n");
+                }
+                
+                return value; // Return the assigned value
+            } else {
+                // Binary operation
+                String left = generateExpression(ctx.expression(0));
+                String right = generateExpression(ctx.expression(1));
+                return generateBinaryOp(left, right, op);
+            }
         } else if (ctx.getChildCount() >= 3 && ctx.getChild(1).getText().equals("(")) {
             // Function call (with or without arguments)
             String functionName = ctx.expression(0).getText();
@@ -176,6 +194,9 @@ public class LocusLLVMGenerator extends LocusBaseListener {
                 return loadName;
             }
             return "0";
+        } else if (ctx.getChildCount() == 3 && ctx.getChild(0).getText().equals("(") && ctx.getChild(2).getText().equals(")")) {
+            // Parenthesized expression
+            return generateExpression(ctx.expression());
         }
         
         return "0"; // Default
@@ -254,6 +275,144 @@ public class LocusLLVMGenerator extends LocusBaseListener {
     
     private String getLLVMType(String locusType) {
         return typeMapping.getOrDefault(locusType, "i32");
+    }
+    
+    @Override
+    public void enterIfStatement(LocusParser.IfStatementContext ctx) {
+        // Generate condition expression
+        String condition = generateExpression(ctx.expression());
+        
+        // Create labels for if/else/end blocks
+        String ifLabel = "if_" + labelCounter++;
+        String elseLabel = "else_" + labelCounter++;
+        String endLabel = "end_" + labelCounter++;
+        
+        // Branch based on condition
+        if (ctx.ELSE() != null) {
+            llvmIR.append("  br i1 ").append(condition).append(", label %").append(ifLabel)
+                  .append(", label %").append(elseLabel).append("\n\n");
+        } else {
+            llvmIR.append("  br i1 ").append(condition).append(", label %").append(ifLabel)
+                  .append(", label %").append(endLabel).append("\n\n");
+        }
+        
+        // Start if block
+        llvmIR.append(ifLabel).append(":\n");
+        
+        // Store labels for later use
+        symbolTable.put("current_if_else", elseLabel);
+        symbolTable.put("current_if_end", endLabel);
+        symbolTable.put("current_if_has_else", ctx.ELSE() != null ? "true" : "false");
+        symbolTable.put("current_if_state", "in_if_block");
+        symbolTable.put("current_if_block_count", "0");
+    }
+    
+    @Override
+    public void exitIfStatement(LocusParser.IfStatementContext ctx) {
+        String endLabel = symbolTable.get("current_if_end");
+        
+        // End label
+        llvmIR.append(endLabel).append(":\n");
+        
+        // Clean up temporary symbols
+        symbolTable.remove("current_if_else");
+        symbolTable.remove("current_if_end");
+        symbolTable.remove("current_if_has_else");
+        symbolTable.remove("current_if_state");
+        symbolTable.remove("current_if_block_count");
+    }
+    
+    @Override
+    public void enterBlock(LocusParser.BlockContext ctx) {
+        String ifState = symbolTable.get("current_if_state");
+        if (ifState != null) {
+            String blockCount = symbolTable.get("current_if_block_count");
+            int count = Integer.parseInt(blockCount);
+            
+            if (count == 1) {
+                // This is the else block
+                String elseLabel = symbolTable.get("current_if_else");
+                String hasElse = symbolTable.get("current_if_has_else");
+                
+                if ("true".equals(hasElse)) {
+                    // Jump to end after if block, then start else block
+                    String endLabel = symbolTable.get("current_if_end");
+                    llvmIR.append("  br label %").append(endLabel).append("\n\n");
+                    llvmIR.append(elseLabel).append(":\n");
+                }
+            }
+            
+            symbolTable.put("current_if_block_count", String.valueOf(count + 1));
+        }
+    }
+    
+    @Override
+    public void exitBlock(LocusParser.BlockContext ctx) {
+        String ifState = symbolTable.get("current_if_state");
+        if (ifState != null) {
+            String blockCount = symbolTable.get("current_if_block_count");
+            int count = Integer.parseInt(blockCount);
+            
+            if (count == 2) {
+                // Just finished the else block
+                String endLabel = symbolTable.get("current_if_end");
+                llvmIR.append("  br label %").append(endLabel).append("\n\n");
+            } else if (count == 1) {
+                // Just finished the if block
+                String hasElse = symbolTable.get("current_if_has_else");
+                if (!"true".equals(hasElse)) {
+                    // No else block, jump to end
+                    String endLabel = symbolTable.get("current_if_end");
+                    llvmIR.append("  br label %").append(endLabel).append("\n\n");
+                }
+            }
+        }
+    }
+
+    @Override
+    public void enterExpressionStatement(LocusParser.ExpressionStatementContext ctx) {
+        // Generate the expression (this handles assignments, function calls, etc.)
+        generateExpression(ctx.expression());
+    }
+    
+    @Override
+    public void enterWhileStatement(LocusParser.WhileStatementContext ctx) {
+        // Create labels for while loop
+        String condLabel = "while_cond_" + labelCounter++;
+        String bodyLabel = "while_body_" + labelCounter++;
+        String endLabel = "while_end_" + labelCounter++;
+        
+        // Jump to condition check
+        llvmIR.append("  br label %").append(condLabel).append("\n\n");
+        
+        // Condition block
+        llvmIR.append(condLabel).append(":\n");
+        String condition = generateExpression(ctx.expression());
+        llvmIR.append("  br i1 ").append(condition).append(", label %").append(bodyLabel)
+              .append(", label %").append(endLabel).append("\n\n");
+        
+        // Body block
+        llvmIR.append(bodyLabel).append(":\n");
+        
+        // Store labels for later use
+        symbolTable.put("current_while_cond", condLabel);
+        symbolTable.put("current_while_end", endLabel);
+    }
+    
+    @Override
+    public void exitWhileStatement(LocusParser.WhileStatementContext ctx) {
+        String condLabel = symbolTable.get("current_while_cond");
+        String endLabel = symbolTable.get("current_while_end");
+        
+        // Jump back to condition after body
+        llvmIR.append("  br label %").append(condLabel).append("\n\n");
+        
+        // End label
+        llvmIR.append(endLabel).append(":\n");
+        
+        // Clean up temporary symbols
+        symbolTable.remove("current_while_cond");
+        symbolTable.remove("current_while_end");
     }
     
     public String getLLVMIR() {
