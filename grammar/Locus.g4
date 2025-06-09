@@ -49,7 +49,9 @@ parameter
     ;
 
 modeAnnotation
-    : AT localityMode uniquenessMode?
+    : localityMode uniquenessMode?
+    | uniquenessMode localityMode?
+    | AT localityMode uniquenessMode?
     | AT uniquenessMode localityMode?
     ;
 

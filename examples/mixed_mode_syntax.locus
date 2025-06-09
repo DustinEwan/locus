@@ -1,0 +1,47 @@
+// Demonstration of both @ and standalone mode syntax working together
+
+struct Point {
+    x: i32;
+    y: i32;
+}
+
+enum Status {
+    Active,
+    Inactive,
+    Pending
+}
+
+fn main() -> i32 {
+    // Standalone mode keywords (new syntax)
+    local Point origin = Point { x: 0, y: 0 };
+    unique Status status = Status::Active;
+    global i32 counter = 0;
+    shared String message = "Hello World";
+    
+    // @ prefixed mode annotations (original syntax)
+    @local Point destination = Point { x: 100, y: 200 };
+    @unique Status new_status = Status::Pending;
+    @global i32 max_count = 1000;
+    @shared String greeting = "Welcome";
+    
+    // Mixed mode combinations - standalone
+    local unique i32 special_id = 42;
+    global shared bool is_ready = false;
+    
+    // Mixed mode combinations - @ prefixed
+    @unique local Point center = Point { x: 50, y: 50 };
+    @shared global i32 total_items = 500;
+    
+    return 0;
+}
+
+fn process() -> i32 {
+    // Both syntaxes can be used in the same function
+    unique Point p1 = Point { x: 1, y: 2 };
+    @local Point p2 = Point { x: 3, y: 4 };
+    
+    shared global Status current = Status::Active;
+    @global unique i32 id = 123;
+    
+    return 1;
+}

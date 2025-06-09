@@ -1,0 +1,34 @@
+// Test file demonstrating mode keywords without @ symbol
+
+struct Point {
+    x: i32;
+    y: i32;
+}
+
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+fn main() -> i32 {
+    // Using standalone mode keywords (no @ symbol)
+    local Point point = Point { x: 10, y: 20 };
+    unique Color color = Color::Red;
+    global i32 counter = 0;
+    shared String message = "Hello";
+    
+    // Mixed mode annotations
+    local unique i32 special_value = 42;
+    global shared bool flag = false;
+    
+    return 0;
+}
+
+fn process_data() -> i32 {
+    // More examples with different mode combinations
+    unique local Point origin = Point { x: 0, y: 0 };
+    shared global i32 max_size = 1000;
+    
+    return 1;
+}
