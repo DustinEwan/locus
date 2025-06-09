@@ -1,0 +1,19 @@
+// Simple struct and enum test
+
+struct Point {
+    x: i32;
+    y: i32;
+}
+
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+fn main() -> i32 {
+    @local Point point = Point { x: 10, y: 20 };
+    @unique Color color = Color::Red;
+    
+    return 0;
+}

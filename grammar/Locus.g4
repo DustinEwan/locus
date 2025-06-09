@@ -8,6 +8,8 @@ program
 statement
     : variableDeclaration
     | functionDeclaration
+    | structDeclaration
+    | enumDeclaration
     | expressionStatement
     | ifStatement
     | whileStatement
@@ -19,7 +21,23 @@ variableDeclaration
     ;
 
 functionDeclaration
-    : 'fn' IDENTIFIER '(' parameterList? ')' ('->' type)? block
+    : FN IDENTIFIER '(' parameterList? ')' ('->' type)? block
+    ;
+
+structDeclaration
+    : STRUCT IDENTIFIER ('<' typeList '>')? '{' structField* '}'
+    ;
+
+structField
+    : modeAnnotation? IDENTIFIER COLON type ';'
+    ;
+
+enumDeclaration
+    : ENUM IDENTIFIER ('<' typeList '>')? '{' enumVariant (',' enumVariant)* ','? '}'
+    ;
+
+enumVariant
+    : IDENTIFIER ('(' typeList ')')?
     ;
 
 parameterList
@@ -31,19 +49,19 @@ parameter
     ;
 
 modeAnnotation
-    : localityMode uniquenessMode?
-    | uniquenessMode localityMode?
+    : AT localityMode uniquenessMode?
+    | AT uniquenessMode localityMode?
     ;
 
 localityMode
-    : 'local'
-    | 'global'
+    : LOCAL
+    | GLOBAL
     ;
 
 uniquenessMode
-    : 'unique'
-    | 'shared'
-    | 'exclusive'
+    : UNIQUE
+    | SHARED
+    | EXCLUSIVE
     ;
 
 type
@@ -74,15 +92,15 @@ block
     ;
 
 ifStatement
-    : 'if' expression block ('else' block)?
+    : IF expression block (ELSE block)?
     ;
 
 whileStatement
-    : 'while' expression block
+    : WHILE expression block
     ;
 
 returnStatement
-    : 'return' expression? ';'
+    : RETURN expression? ';'
     ;
 
 expressionStatement
@@ -113,9 +131,48 @@ primary
     | STRING
     | BOOLEAN
     | '(' expression ')'
+    | structInitializer
+    | enumVariantAccess
+    ;
+
+structInitializer
+    : IDENTIFIER '{' fieldInitList? '}'
+    ;
+
+fieldInitList
+    : fieldInit (',' fieldInit)*
+    ;
+
+fieldInit
+    : IDENTIFIER COLON expression
+    ;
+
+enumVariantAccess
+    : IDENTIFIER DOUBLE_COLON IDENTIFIER
     ;
 
 // Lexer Rules
+// Keywords (must come before IDENTIFIER)
+STRUCT : 'struct';
+ENUM : 'enum';
+FN : 'fn';
+IF : 'if';
+ELSE : 'else';
+WHILE : 'while';
+RETURN : 'return';
+LOCAL : 'local';
+GLOBAL : 'global';
+UNIQUE : 'unique';
+SHARED : 'shared';
+EXCLUSIVE : 'exclusive';
+TRUE : 'true';
+FALSE : 'false';
+
+// Symbols
+COLON : ':';
+AT : '@';
+DOUBLE_COLON : '::';
+
 IDENTIFIER
     : [a-zA-Z_][a-zA-Z0-9_]*
     ;
@@ -133,8 +190,8 @@ STRING
     ;
 
 BOOLEAN
-    : 'true'
-    | 'false'
+    : TRUE
+    | FALSE
     ;
 
 // Whitespace and Comments

@@ -1,0 +1,47 @@
+// Example demonstrating struct and enum declarations in Locus
+
+// Simple struct declaration
+struct Point {
+    x: i32;
+    y: i32;
+}
+
+// Struct with mode annotations
+struct ManagedPoint {
+    @unique x: i32;
+    @local y: i32;
+}
+
+// Generic struct
+struct Container<T> {
+    value: T;
+    size: i32;
+}
+
+// Simple enum
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+// Enum with data
+enum Shape {
+    Circle(f32),
+    Rectangle(f32, f32),
+    Triangle(f32, f32, f32)
+}
+
+// Generic enum
+enum Option<T> {
+    Some(T),
+    None
+}
+
+fn main() -> i32 {
+    // Using the defined types
+    @local Point point = Point { x: 10, y: 20 };
+    @unique Color color = Color::Red;
+    
+    return 0;
+}

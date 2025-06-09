@@ -8,12 +8,12 @@ fn fibonacci(i32 n) -> i32 {
 }
 
 fn main() -> i32 {
-    local i32 count = 10;
-    unique String result = "Fibonacci sequence: ";
+    @local i32 count = 10;
+    @unique String result = "Fibonacci sequence: ";
     
-    local i32 i = 0;
+    @local i32 i = 0;
     while i < count {
-        local i32 fib = fibonacci(i);
+        @local i32 fib = fibonacci(i);
         result = result + fib + " ";
         i = i + 1;
     }
@@ -22,6 +22,6 @@ fn main() -> i32 {
     return 0;
 }
 
-fn print(shared String text) {
+fn print(@shared String text) {
     // Print implementation
 }
