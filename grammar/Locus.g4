@@ -21,7 +21,7 @@ variableDeclaration
     ;
 
 functionDeclaration
-    : FN IDENTIFIER '(' parameterList? ')' ('->' type)? block
+    : FN IDENTIFIER ('<' typeList '>')? '(' parameterList? ')' ('->' modeAnnotation? type)? block
     ;
 
 structDeclaration
@@ -45,14 +45,13 @@ parameterList
     ;
 
 parameter
-    : modeAnnotation? type IDENTIFIER
+    : modeAnnotation? IDENTIFIER COLON type
+    | modeAnnotation? type IDENTIFIER
     ;
 
 modeAnnotation
     : localityMode uniquenessMode?
     | uniquenessMode localityMode?
-    | AT localityMode uniquenessMode?
-    | AT uniquenessMode localityMode?
     ;
 
 localityMode
@@ -131,7 +130,8 @@ primary
     | INTEGER
     | FLOAT
     | STRING
-    | BOOLEAN
+    | TRUE
+    | FALSE
     | '(' expression ')'
     | structInitializer
     | enumVariantAccess
@@ -172,7 +172,6 @@ FALSE : 'false';
 
 // Symbols
 COLON : ':';
-AT : '@';
 DOUBLE_COLON : '::';
 
 IDENTIFIER
@@ -191,10 +190,7 @@ STRING
     : '"' (~["\r\n] | '\\' .)* '"'
     ;
 
-BOOLEAN
-    : TRUE
-    | FALSE
-    ;
+
 
 // Whitespace and Comments
 WS

@@ -1,0 +1,198 @@
+// Linked List implementation in Locus
+// This tests ownership, borrowing, and memory management concepts
+
+// Generic Node structure with ownership annotations
+struct Node<T> {
+    value: T;
+    unique next: Option<Node<T>>;  // Unique ownership of next node
+}
+
+// Generic Option enum for nullable references
+enum Option<T> {
+    Some(T),
+    None
+}
+
+// Linked List container with ownership semantics
+struct LinkedList<T> {
+    unique head: Option<Node<T>>;  // Unique ownership of head
+    local size: i32;               // Local size counter
+}
+
+// Implementation functions for LinkedList
+fn create_list<T>() -> unique LinkedList<T> {
+    unique LinkedList<T> list = LinkedList {
+        head: Option::None,
+        size: 0
+    };
+    return list;
+}
+
+fn create_node<T>(value: T) -> unique Node<T> {
+    unique Node<T> node = Node {
+        value: value,
+        next: Option::None
+    };
+    return node;
+}
+
+// Push element to front of list (transfer ownership)
+fn push_front<T>(unique LinkedList<T> list, T value) -> unique LinkedList<T> {
+    unique Node<T> new_node = create_node(value);
+    
+    // Move current head to new node's next
+    new_node.next = list.head;
+    
+    // Update list head to new node
+    list.head = Option::Some(new_node);
+    list.size = list.size + 1;
+    
+    return list;
+}
+
+// Pop element from front (transfer ownership back)
+fn pop_front<T>(unique LinkedList<T> list) -> Option<T> {
+    // Pattern matching would be ideal here, but using basic logic for now
+    local Option<Node<T>> head_option = list.head;
+    
+    // If head exists, extract value and update list
+    if (head_option != Option::None) {
+        unique Node<T> head_node = head_option;  // Extract from Option
+        T value = head_node.value;
+        list.head = head_node.next;
+        list.size = list.size - 1;
+        return Option::Some(value);
+    } else {
+        return Option::None;
+    }
+}
+
+// Get size of list (shared access)
+fn get_size<T>(shared LinkedList<T> list) -> i32 {
+    return list.size;
+}
+
+// Check if list is empty (shared access)
+fn is_empty<T>(shared LinkedList<T> list) -> bool {
+    return list.size == 0;
+}
+
+// Traverse and print list (shared access for read-only operations)
+fn print_list(shared LinkedList<i32> list) -> i32 {
+    shared Option<Node<i32>> current = list.head;
+    local i32 index = 0;
+    
+    // Traverse the list
+    while (current != Option::None && index < list.size) {
+        // Extract node from Option (in real implementation, pattern matching)
+        shared Node<i32> node = current;  // Simplified extraction
+        local i32 value = node.value;
+        
+        // Move to next node
+        current = node.next;
+        index = index + 1;
+    }
+    
+    return index;
+}
+
+// Advanced: Insert at specific position
+fn insert_at<T>(unique LinkedList<T> list, i32 position, T value) -> unique LinkedList<T> {
+    // Insert at beginning if position is 0
+    if (position == 0) {
+        return push_front(list, value);
+    }
+    
+    // Traverse to position and insert
+    unique Node<T> new_node = create_node(value);
+    local i32 current_pos = 0;
+    unique Option<Node<T>> current = list.head;
+    
+    // Find insertion point
+    while (current_pos < position - 1 && current != Option::None) {
+        // Move to next node (ownership transfer)
+        unique Node<T> current_node = current;  // Extract from Option
+        current = current_node.next;
+        current_pos = current_pos + 1;
+    }
+    
+    // Insert new node
+    if (current != Option::None) {
+        unique Node<T> current_node = current;
+        new_node.next = current_node.next;
+        current_node.next = Option::Some(new_node);
+        list.size = list.size + 1;
+    }
+    
+    return list;
+}
+
+// Main function demonstrating linked list usage
+fn main() -> i32 {
+    // Create a new linked list
+    unique LinkedList<i32> my_list = create_list();
+    
+    // Add some elements
+    my_list = push_front(my_list, 10);
+    my_list = push_front(my_list, 20);
+    my_list = push_front(my_list, 30);
+    
+    // Check size (shared access)
+    local i32 size = get_size(my_list);
+    local bool empty = is_empty(my_list);
+    
+    // Insert at position
+    my_list = insert_at(my_list, 1, 25);
+    
+    // Print the list
+    local i32 printed_count = print_list(my_list);
+    
+    // Pop elements
+    local Option<i32> popped1 = pop_front(my_list);
+    local Option<i32> popped2 = pop_front(my_list);
+    
+    // Final size check
+    local i32 final_size = get_size(my_list);
+    
+    return final_size;
+}
+
+// Advanced: Reverse the linked list (demonstrates complex ownership transfers)
+fn reverse_list<T>(unique LinkedList<T> list) -> unique LinkedList<T> {
+    unique Option<Node<T>> prev = Option::None;
+    unique Option<Node<T>> current = list.head;
+    
+    // Reverse the links
+    while (current != Option::None) {
+        unique Node<T> current_node = current;  // Extract current
+        unique Option<Node<T>> next = current_node.next;  // Save next
+        
+        current_node.next = prev;  // Reverse the link
+        prev = Option::Some(current_node);  // Move prev forward
+        current = next;  // Move current forward
+    }
+    
+    // Update list head
+    list.head = prev;
+    return list;
+}
+
+// Memory-safe iterator pattern (shared access)
+fn find_value<T>(shared LinkedList<T> list, T target) -> bool {
+    shared Option<Node<T>> current = list.head;
+    local i32 index = 0;
+    
+    while (current != Option::None && index < list.size) {
+        shared Node<T> node = current;
+        
+        // Compare values (would need proper equality in real implementation)
+        if (node.value == target) {
+            return true;
+        }
+        
+        current = node.next;
+        index = index + 1;
+    }
+    
+    return false;
+}
